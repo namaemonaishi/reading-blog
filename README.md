@@ -8,8 +8,33 @@ Astro 对 Markdown 文章很友好，构建结果是静态 HTML，部署到 GitH
 
 ## 每天怎么用
 
+最省事的方式是运行新文章生成器：
+
+```powershell
+cd E:\blog
+npm run new
+```
+
+它会让你选择模板并填写标题、链接、来源、标签等信息，然后自动在 `src\pages\reading` 里创建一篇格式完整的 `.md` 文章。
+
+目前有三种模板：
+
+- `daily`：日常阅读，适合每天读完一篇文章后的标准记录。
+- `deep`：深度阅读，适合长文、论文、书评或需要拆论证的文章。
+- `digest`：链接速记，适合先保存链接和三点收获。
+
+你也可以直接带参数创建：
+
+```powershell
+node scripts/new-reading-note.mjs --template daily --title "文章标题" --url "https://example.com/article" --source "文章来源" --tags "AI,阅读,方法"
+```
+
+生成后打开新文件，继续写正文即可。
+
+## 手动复制模板
+
 1. 进入 `E:\blog\src\pages\reading`。
-2. 复制示例文章，改名为 `YYYY-MM-DD-英文或拼音标题.md`，比如 `2026-07-30-ai-notes.md`。
+2. 从 `E:\blog\templates` 里复制一个模板，或者复制示例文章，改名为 `YYYY-MM-DD-英文或拼音标题.md`，比如 `2026-07-30-ai-notes.md`。
 3. 修改文件顶部的字段：
 
 ```md
@@ -27,6 +52,16 @@ mood: "读完后的短评价"
 ```
 
 4. 在下面写正文，可以用 Markdown 的标题、列表、引用和链接。
+
+## 在 VS Code 里快速展开模板
+
+如果你用 VS Code 打开 `E:\blog`：
+
+1. 在 `src\pages\reading` 里新建一个 `.md` 文件。
+2. 输入 `readingnote`，按 `Tab`，会展开日常阅读模板。
+3. 输入 `deepreading`，按 `Tab`，会展开深度阅读模板。
+
+这个功能来自项目里的 `.vscode\reading-note.code-snippets`。
 
 ## 本地预览
 
