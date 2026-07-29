@@ -1,0 +1,159 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const modules = import.meta.glob("./reading/*.md", { eager: true });
+const articles = Object.values(modules)
+  .map((post) => ({
+    ...post.frontmatter,
+    url: post.url,
+    tags: post.frontmatter.tags ?? [],
+  }))
+  .filter((post) => !post.draft)
+  .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+
+const featured = articles[0];
+const allTags = [...new Set(articles.flatMap((post) => post.tags))].sort((a, b) =>
+  a.localeCompare(b, "zh-CN")
+);
+const readingDays = new Set(articles.map((post) => new Date(post.date).toISOString().slice(0, 10))).size;
+const base = import.meta.env.BASE_URL;
+const withBase = (path) => `${base}${path.replace(/^\//, "")}`;
+const heroImage = withBase("/og.png");
+const slugify = (tag) =>
+  String(tag)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\p{L}\p{N}_-]+/gu, "");
+const formatDate = (date) =>
+  new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(date));
+---
+
+<BaseLayout>
+  <section class="wrap hero">
+    <div>
+      <p class="eyebrow">Daily Reading Notes</p>
+      <h1>每日阅读札记</h1>
+      <p>把每天读过的文章、摘录、判断和问题留在一个安静的地方。这里适合短笔记，也适合把一篇文章慢慢读透。</p>
+      <div class="hero-actions">
+        <a class="button" href="#latest">查看最新记录</a>
+        <a class="ghost-button" href={withBase("/archive/")}>浏览归档</a>
+      </div>
+    </div>
+    <figure class="hero-visual">
+      <img src={heroImage} alt="书桌、书本、文章纸页和笔记电脑组成的阅读记录场景" width="1536" height="1024" />
+    </figure>
+  </section>
+
+  <section class="wrap stats" aria-label="阅读记录统计">
+    <div class="stat">
+      <strong>{articles.length}</strong>
+      <span>篇阅读记录</span>
+    </div>
+    <div class="stat">
+      <strong>{readingDays}</strong>
+      <span>个阅读日</span>
+    </div>
+    <div class="stat">
+      <strong>{allTags.length}</strong>
+      <span>个主题标签</span>
+    </div>
+  </section>
+
+  {featured && (
+    <section class="wrap section featured" aria-labelledby="featured-title">
+      <div class="featured-copy">
+        <p class="eyebrow">Latest</p>
+        <h2 id="featured-title"><a href={featured.url}>{featured.title}</a></h2>
+        <p>{featured.description}</p>
+        <div class="tag-list">
+          {featured.tags.map((tag) => <a class="tag" href={withBase(`/tags/${slugify(tag)}/`)}>{tag}</a>)}
+        </div>
+      </div>
+      <aside class="note-panel">
+        <span>{formatDate(featured.date)}</span>
+        <strong>{featured.mood ?? "今日读完"}</strong>
+        {featured.source && <span>{featured.source}</span>}
+      </aside>
+    </section>
+  )}
+
+  <section class="wrap section" id="latest">
+    <div class="section-heading">
+      <h2>最近记录</h2>
+      <p>搜索标题、来源、摘要或标签，快速找到你曾经读过的东西。</p>
+    </div>
+
+    <div class="toolbar" role="search">
+      <input class="search-box" id="article-search" type="search" placeholder="搜索阅读记录" aria-label="搜索阅读记录" />
+      <select class="select-box" id="tag-filter" aria-label="按标签筛选">
+        <option value="">全部标签</option>
+        {allTags.map((tag) => <option value={tag}>{tag}</option>)}
+      </select>
+    </div>
+
+    <div class="article-grid" id="article-grid">
+      {articles.map((post) => (
+        <article
+          class="article-card"
+          data-title={post.title}
+          data-description={post.description}
+          data-source={post.source ?? ""}
+          data-tags={post.tags.join(" ")}
+        >
+          <div>
+            <div class="card-meta">
+              <time datetime={new Date(post.date).toISOString()}>{formatDate(post.date)}</time>
+              {post.source && <span>{post.source}</span>}
+            </div>
+            <h3><a href={post.url}>{post.title}</a></h3>
+            <p>{post.description}</p>
+          </div>
+          <div class="tag-list">
+            {post.tags.map((tag) => <a class="tag" href={withBase(`/tags/${slugify(tag)}/`)}>{tag}</a>)}
+          </div>
+        </article>
+      ))}
+    </div>
+    <p class="empty-state" id="empty-state" hidden>没有匹配的记录。</p>
+  </section>
+
+  <script>
+    const searchInput = document.querySelector("#article-search");
+    const tagFilter = document.querySelector("#tag-filter");
+    const cards = Array.from(document.querySelectorAll(".article-card"));
+    const emptyState = document.querySelector("#empty-state");
+
+    const normalize = (value) => value.toLowerCase().trim();
+
+    function updateCards() {
+      const query = normalize(searchInput?.value ?? "");
+      const tag = tagFilter?.value ?? "";
+      let visibleCount = 0;
+
+      for (const card of cards) {
+        const text = normalize([
+          card.dataset.title,
+          card.dataset.description,
+          card.dataset.source,
+          card.dataset.tags,
+        ].join(" "));
+        const tags = card.dataset.tags?.split(" ") ?? [];
+        const matchesQuery = !query || text.includes(query);
+        const matchesTag = !tag || tags.includes(tag);
+        const visible = matchesQuery && matchesTag;
+        card.dataset.hidden = String(!visible);
+        if (visible) visibleCount += 1;
+      }
+
+      if (emptyState) emptyState.hidden = visibleCount !== 0;
+    }
+
+    searchInput?.addEventListener("input", updateCards);
+    tagFilter?.addEventListener("change", updateCards);
+  </script>
+</BaseLayout>

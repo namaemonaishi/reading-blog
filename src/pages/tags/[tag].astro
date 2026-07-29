@@ -1,0 +1,61 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+export function getStaticPaths() {
+  const toSlug = (tag) =>
+    String(tag)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^\p{L}\p{N}_-]+/gu, "");
+  const modules = import.meta.glob("../reading/*.md", { eager: true });
+  const articles = Object.values(modules)
+    .map((post) => ({
+      ...post.frontmatter,
+      url: post.url,
+      tags: post.frontmatter.tags ?? [],
+    }))
+    .filter((post) => !post.draft);
+  const tags = [...new Set(articles.flatMap((post) => post.tags))];
+
+  return tags.map((tag) => ({
+    params: { tag: toSlug(tag) },
+    props: {
+      tag,
+      articles: articles
+        .filter((post) => post.tags.includes(tag))
+        .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf()),
+    },
+  }));
+}
+
+const { tag, articles } = Astro.props;
+const formatDate = (date) =>
+  new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(date));
+---
+
+<BaseLayout title={`${tag} | 每日阅读札记`} description={`关于 ${tag} 的阅读记录。`}>
+  <section class="wrap page-title tag-header">
+    <div>
+      <p class="eyebrow">Tag</p>
+      <h1>{tag}</h1>
+    </div>
+    <p>{articles.length} 篇相关记录。</p>
+  </section>
+
+  <section class="wrap section archive-list">
+    {articles.map((post) => (
+      <article class="archive-item">
+        <time datetime={new Date(post.date).toISOString()}>{formatDate(post.date)}</time>
+        <div>
+          <h2><a href={post.url}>{post.title}</a></h2>
+          <p>{post.description}</p>
+        </div>
+      </article>
+    ))}
+  </section>
+</BaseLayout>

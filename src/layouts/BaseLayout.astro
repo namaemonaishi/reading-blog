@@ -1,0 +1,60 @@
+---
+import "../styles/global.css";
+
+const {
+  title = "每日阅读札记",
+  description = "一个用来保存每日阅读文章、摘录和思考的个人静态博客。",
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+const withBase = (path) => `${base}${path.replace(/^\//, "")}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const ogImage = new URL(`${base}og.png`, Astro.site ?? Astro.url).toString();
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" type="application/rss+xml" title="每日阅读札记 RSS" href={withBase("/feed.xml")} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <nav class="nav" aria-label="主导航">
+          <a class="brand" href={withBase("/")}>
+            <span class="brand-mark" aria-hidden="true">R</span>
+            <span class="brand-text">每日阅读札记</span>
+          </a>
+          <div class="nav-links">
+            <a href={withBase("/")}>首页</a>
+            <a href={withBase("/archive/")}>归档</a>
+            <a href={withBase("/feed.xml")}>RSS</a>
+          </div>
+        </nav>
+      </header>
+      <main>
+        <slot />
+      </main>
+      <footer class="site-footer">
+        <div class="wrap footer-inner">
+          <span>把读过的文章放回时间里。</span>
+          <span>Built with Astro.</span>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
