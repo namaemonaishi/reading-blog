@@ -140,12 +140,39 @@ function sourceUrlFor(data) {
   return "";
 }
 
-function tagsFor(data) {
+function collectionNamesFor(data, collectionMap) {
+  const names = [];
+  const seenNames = new Set();
+
+  for (const key of data.collections ?? []) {
+    const chain = [];
+    let collection = collectionMap.get(key);
+    const seenKeys = new Set();
+
+    while (collection && !seenKeys.has(collection.key)) {
+      seenKeys.add(collection.key);
+      chain.unshift(collection.name);
+      if (!collection.parentCollection) break;
+      collection = collectionMap.get(collection.parentCollection);
+    }
+
+    for (const name of chain) {
+      if (!name || seenNames.has(name) || name.startsWith("_")) continue;
+      seenNames.add(name);
+      names.push(name);
+    }
+  }
+
+  return names;
+}
+
+function tagsFor(data, collectionMap = new Map()) {
+  const collectionTags = collectionNamesFor(data, collectionMap);
   const zoteroTags = (data.tags ?? [])
     .map((tag) => tag.tag)
     .filter(Boolean)
     .filter((tag) => !tag.startsWith("_"));
-  return [...new Set(["Zotero", ...zoteroTags])];
+  return [...new Set(["Zotero", ...collectionTags, ...zoteroTags])];
 }
 
 function slugify(value, fallback) {
@@ -232,7 +259,7 @@ function renderMarkdown(item, options) {
   const pageDate = options.dateSource === "today" ? today() : formatDate(dateAdded);
   const source = sourceFor(data);
   const url = sourceUrlFor(data);
-  const tagList = tagsFor(data);
+  const tagList = tagsFor(data, options.collectionMap);
   const authorText = authors(data.creators);
   const description = summarize(data.abstractNote, "从 Zotero 自动生成的阅读草稿，待补充摘要。");
   const publishedDate = data.date || "";
@@ -293,6 +320,11 @@ function endpoint(config, suffix) {
 }
 
 async function requestJson(url, config) {
+  const { json } = await requestJsonWithHeaders(url, config);
+  return json;
+}
+
+async function requestJsonWithHeaders(url, config) {
   const headers = { "Zotero-API-Version": "3" };
   if (config.apiKey) headers["Zotero-API-Key"] = config.apiKey;
 
@@ -302,24 +334,73 @@ async function requestJson(url, config) {
     throw new Error(`${response.status} ${response.statusText}: ${body || url}`);
   }
 
-  return response.json();
+  return {
+    headers: response.headers,
+    json: await response.json(),
+  };
 }
 
-async function resolveCollectionKey(config) {
+function nextPageFromLink(header) {
+  if (!header) return "";
+
+  for (const part of header.split(",")) {
+    const match = part.match(/<([^>]+)>;\s*rel="next"/);
+    if (match) return match[1];
+  }
+
+  return "";
+}
+
+async function requestAllPages(url, config) {
+  const results = [];
+  let nextUrl = url;
+
+  while (nextUrl) {
+    const { headers, json } = await requestJsonWithHeaders(nextUrl, config);
+    if (Array.isArray(json)) {
+      results.push(...json);
+    } else {
+      results.push(json);
+    }
+    nextUrl = nextPageFromLink(headers.get("link"));
+  }
+
+  return results;
+}
+
+async function fetchCollectionMap(config) {
+  const url = new URL(endpoint(config, "/collections"));
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "100");
+
+  const collections = await requestAllPages(url.toString(), config);
+  return new Map(
+    collections
+      .filter((entry) => entry.key && entry.data?.name)
+      .map((entry) => [
+        entry.key,
+        {
+          key: entry.key,
+          name: entry.data.name,
+          parentCollection: entry.data.parentCollection,
+        },
+      ])
+  );
+}
+
+async function resolveCollectionKey(config, collectionMap) {
   if (config.collectionKey) return config.collectionKey;
   if (!config.collectionName) return "";
 
-  const url = endpoint(config, "/collections?format=json");
-  const collections = await requestJson(url, config);
-  const collection = collections.find((entry) => entry.data?.name === config.collectionName);
+  const collection = [...collectionMap.values()].find((entry) => entry.name === config.collectionName);
   if (!collection) {
     throw new Error(`没有找到 Zotero collection：${config.collectionName}`);
   }
   return collection.key;
 }
 
-async function fetchItems(config) {
-  const collectionKey = await resolveCollectionKey(config);
+async function fetchItems(config, collectionMap) {
+  const collectionKey = await resolveCollectionKey(config, collectionMap);
   const pathPart = collectionKey
     ? `/collections/${collectionKey}/items/top`
     : "/items/top";
@@ -335,7 +416,8 @@ async function fetchItems(config) {
 async function importOnce(config) {
   const state = await loadState();
   const existingKeys = await existingZoteroKeys();
-  const items = await fetchItems(config);
+  const collectionMap = await fetchCollectionMap(config);
+  const items = await fetchItems(config, collectionMap);
   let created = 0;
   let skipped = 0;
 
@@ -359,10 +441,12 @@ async function importOnce(config) {
     const prefix = config.publish ? "" : "_";
     const fileName = `${prefix}${date}-${slug}.md`;
     const filePath = await uniqueFilePath(fileName);
-    const markdown = renderMarkdown(item, config);
+    const markdown = renderMarkdown(item, { ...config, collectionMap });
 
     if (config.dryRun) {
-      console.log(`[dry-run] ${path.relative(root, filePath)} <= ${title}`);
+      const tagList = tagsFor(data, collectionMap);
+      console.log(`[dry-run] ${path.relative(root, filePath)} <= ${title} | tags: ${tagList.join(", ")}`);
+      created += 1;
     } else {
       await writeFile(filePath, markdown, "utf8");
       console.log(`已生成：${path.relative(root, filePath)}`);
@@ -377,7 +461,8 @@ async function importOnce(config) {
   }
 
   if (!config.dryRun) await saveState(state);
-  console.log(`完成：新增 ${created} 篇，跳过 ${skipped} 条。`);
+  const createdLabel = config.dryRun ? "会生成" : "新增";
+  console.log(`完成：${createdLabel} ${created} 篇，跳过 ${skipped} 条。`);
 }
 
 function showHelp() {

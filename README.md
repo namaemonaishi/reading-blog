@@ -76,6 +76,12 @@ node scripts/zotero-to-reading.mjs --collection-name "Reading Blog"
 
 默认使用 Zotero 本地 API，不需要 API key。需要改配置时，可以复制 `.env.example` 为 `.env` 后再修改。
 
+`tags` 会自动包含：
+
+- `Zotero`
+- 这篇条目所在的 Zotero collection 名称；如果是子 collection，也会包含父级 collection 名称
+- Zotero 条目原本自带的标签
+
 ## 手动复制模板
 
 1. 进入 `E:\blog\src\pages\reading`。
