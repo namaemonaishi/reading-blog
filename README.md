@@ -31,6 +31,51 @@ node scripts/new-reading-note.mjs --template daily --title "文章标题" --url 
 
 生成后打开新文件，继续写正文即可。
 
+## 从 Zotero 自动生成草稿
+
+这个项目可以从 Zotero 桌面端自动读取新导入的条目，并在 `src\pages\reading` 里生成一篇已经填好元信息的 Markdown 草稿。
+
+先在 Zotero 里打开本地 API：
+
+1. 打开 Zotero。
+2. 进入 `设置` -> `高级`。
+3. 勾选 `Allow other applications on this computer to communicate with Zotero`。
+
+然后运行：
+
+```powershell
+cd E:\blog
+npm run zotero:import
+```
+
+它会读取 Zotero 最近新增的条目，生成类似这样的文件：
+
+```text
+E:\blog\src\pages\reading\_2026-07-30-article-title.md
+```
+
+文件名开头有 `_`，所以不会被发布。你整理完笔记后：
+
+1. 把文件名开头的 `_` 删除，比如改成 `2026-07-30-article-title.md`。
+2. 把文件里的 `draft: true` 改成 `draft: false`。
+3. 补全正文。
+4. 提交并推送。
+
+如果你想让它一直监听 Zotero，每隔一分钟检查一次新条目：
+
+```powershell
+cd E:\blog
+npm run zotero:watch
+```
+
+只同步某个 Zotero collection：
+
+```powershell
+node scripts/zotero-to-reading.mjs --collection-name "Reading Blog"
+```
+
+默认使用 Zotero 本地 API，不需要 API key。需要改配置时，可以复制 `.env.example` 为 `.env` 后再修改。
+
 ## 手动复制模板
 
 1. 进入 `E:\blog\src\pages\reading`。

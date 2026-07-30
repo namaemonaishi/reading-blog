@@ -7,6 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "new": "node scripts/new-reading-note.mjs",
+    "zotero:import": "node scripts/zotero-to-reading.mjs",
+    "zotero:watch": "node scripts/zotero-to-reading.mjs --watch",
     "preview": "astro preview"
   },
   "dependencies": {
