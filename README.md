@@ -114,6 +114,31 @@ mood: "读完后的短评价"
 
 这个功能来自项目里的 `.vscode\reading-note.code-snippets`。
 
+## 自动检测新文章并推送
+
+如果你想让它检测到新文章后自动提交并推送，打开一个 PowerShell 窗口运行：
+
+```powershell
+cd E:\blog
+npm run watch:push
+```
+
+这个窗口需要一直开着。之后你只要在 `E:\blog\src\pages\reading` 里新增或修改文章，满足下面两个条件时它就会自动发布：
+
+- 文件名不以 `_` 开头，比如 `2026-08-08-my-note.md`。
+- 文件顶部写着 `draft: false`。
+
+它每次发布前都会先运行一次网站构建检查；如果构建失败，就不会提交，也不会推送。想停止监听时，在这个 PowerShell 窗口按 `Ctrl+C`。
+
+如果你不想长期监听，只想手动扫描一次当前是否有可发布文章：
+
+```powershell
+cd E:\blog
+npm run publish:pending
+```
+
+推荐流程是：先用 `_2026-...md` 和 `draft: true` 写草稿，写完后把文件名前面的 `_` 去掉，再把 `draft: true` 改成 `draft: false`。监听器会在这时自动推送。
+
 ## 本地预览
 
 第一次使用：
@@ -143,3 +168,5 @@ npm run dev
 - 是否有自定义域名。如果有，需要域名和 DNS 管理权限。
 
 项目里已经放好了 `.github/workflows/deploy.yml`。代码推送到 GitHub 后，在仓库的 Settings -> Pages 里把 Source 设为 GitHub Actions，之后每次推送都会自动发布。
+
+
