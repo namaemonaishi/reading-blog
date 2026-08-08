@@ -260,14 +260,12 @@ Random Search 属于第二层，而不是整个方法本身。
 # 2.2 第一步：形式化 Jailbreak 问题
 
 论文首先把攻击目标形式化为：
-
-\[
+$$
 \operatorname{find} P\in T^*
 \quad
 \text{subject to }
 \operatorname{JUDGE}(\operatorname{LLM}(P),R)=YES
-\]
-
+$$
 其中：
 
 - \(R\)：原始 harmful request；
@@ -280,11 +278,9 @@ Random Search 属于第二层，而不是整个方法本身。
 > **一个能够让安全模型实际执行目标行为的完整 prompt \(P\)。**
 
 这里特别要注意：
-
-\[
+$$
 P \neq R
-\]
-
+$$
 一般而言：
 
 ```text
@@ -303,19 +299,15 @@ adversarial suffix
 ## 追问：为什么目标函数里面没有 `"Sure"`？
 
 因为：
-
-\[
+$$
 \log P(\text{"Sure"})
-\]
-
+$$
 并不是 jailbreak 的最终定义。
 
 真正目标仍然是：
-
-\[
+$$
 JUDGE(LLM(P),R)=YES
-\]
-
+$$
 `"Sure"` 的 logprob 只是作者为了方便搜索而引入的：
 
 > **surrogate objective / proxy signal**
@@ -399,25 +391,19 @@ judge
 一个 LLM 每生成一个 token，本来就在计算整个 vocabulary 上的概率分布。
 
 如果 logits 是：
-
-\[
+$$
 z_1,z_2,\ldots,z_n
-\]
-
+$$
 那么：
-
-\[
+$$
 P(t_i)=
 \frac{e^{z_i}}
 {\sum_j e^{z_j}}
-\]
-
+$$
 对应：
-
-\[
+$$
 \log P(t_i)
-\]
-
+$$
 就是 token \(t_i\) 的 logprob。
 
 API 暴露 logprobs 并不是专门为了安全攻击，而可以用于很多正常用途，例如：
@@ -472,11 +458,9 @@ API 暴露 logprobs 并不是专门为了安全攻击，而可以用于很多正
 ```
 
 因此：
-
-\[
+$$
 P = T + R + s
-\]
-
+$$
 其中：
 
 - \(T\)：prompt template；
@@ -518,16 +502,14 @@ P = T + R + s
 作为 target token。
 
 Random Search 优化：
-
-\[
+$$
 \log P_{\text{LLM}}
 (
 \text{"Sure"}
 \mid
 T,R,s
 )
-\]
-
+$$
 即：
 
 > 给定完整 prompt 后，模型在**第一个输出位置**生成 `"Sure"` 的 logprob。
@@ -605,13 +587,11 @@ Prompt
 > **实验上，第一位置的 affirmative-token logprob 与最终攻击成功具有足够强的相关性，因此可以作为有效 optimization proxy。**
 
 而不是：
-
-\[
+$$
 P(\text{Sure})↑
 \Rightarrow
 \text{一定 jailbreak}
-\]
-
+$$
 论文甚至观察到：
 
 > suffix 太长时，虽然 `"Sure"` logprob 可以很高，模型却可能跑题，因此 judge 仍然判定攻击失败。
@@ -635,17 +615,13 @@ semantic judge
 # 2.6 第五步：加入 Adversarial Suffix
 
 作者在 prompt 最后加入一段短 token sequence：
-
-\[
+$$
 s=(s_1,s_2,\ldots,s_L)
-\]
-
+$$
 论文默认：
-
-\[
+$$
 L=25
-\]
-
+$$
 这就是 **adversarial suffix**。
 
 整个输入变成：
@@ -659,11 +635,9 @@ adversarial suffix
 ```
 
 即：
-
-\[
+$$
 x = T + R + s
-\]
-
+$$
 suffix 的 token 不一定具有自然语言意义。
 
 它的目的不是：
@@ -723,13 +697,11 @@ LLM suffix：
 不能完全这样等价。
 
 Adversarial suffix 是自动攻击的一种非常重要技术，但：
-
-\[
+$$
 \text{Automated Jailbreak}
 \neq
 \text{Adversarial Suffix}
-\]
-
+$$
 自动攻击还可能使用：
 
 - automatic prompt rewriting；
@@ -761,11 +733,9 @@ Adversarial suffix 是自动攻击的一种非常重要技术，但：
 > 作者对 suffix 而不是 prefix 的偏好，以及优化 `"Sure"` 的策略，主要受到 Zou et al. 的 GCG 工作启发。
 
 因此论文实际上**没有做系统实验来证明**：
-
-\[
+$$
 suffix > prefix
-\]
-
+$$
 也没有证明：
 
 > token 越靠近输出位置影响一定越强。
@@ -775,17 +745,13 @@ suffix > prefix
 但从方法设计角度，可以理解为什么 suffix 很适合这个实验。
 
 固定：
-
-\[
+$$
 T,R
-\]
-
+$$
 只优化：
-
-\[
+$$
 s
-\]
-
+$$
 以后，问题就变成了一个非常干净的离散优化问题：
 
 ```text
@@ -865,44 +831,32 @@ candidate suffix
 形式化地：
 
 当前 suffix：
-
-\[
+$$
 s^*
-\]
-
+$$
 当前 score：
-
-\[
+$$
 p^*
 =
 \log P(t|x,s^*)
-\]
-
+$$
 随机得到 candidate：
-
-\[
+$$
 s_i
-\]
-
+$$
 然后计算：
-
-\[
+$$
 p_i=
 \log P(t|x,s_i)
-\]
-
+$$
 如果：
-
-\[
+$$
 p_i>p^*
-\]
-
+$$
 则：
-
-\[
+$$
 s^*\leftarrow s_i
-\]
-
+$$
 否则保持原 suffix。
 
 所以它本质上就是：
@@ -922,11 +876,9 @@ s^*\leftarrow s_i
 > **简单，而且不需要 gradient。**
 
 只需要：
-
-\[
+$$
 \text{logprob}
-\]
-
+$$
 因此可以攻击某些只能通过 API 访问的模型。
 
 第二：
@@ -1023,15 +975,13 @@ GCG：
 ## 为什么 suffix 不是越长越好？
 
 直觉上可能认为：
-
-\[
+$$
 \text{更多 token}
 \Rightarrow
 \text{更多 optimization variables}
 \Rightarrow
 \text{攻击更强}
-\]
-
+$$
 但实际不是。
 
 作者发现两个问题。
@@ -1063,17 +1013,13 @@ Random Search
 ```
 
 于是出现：
-
-\[
+$$
 \text{target logprob 很高}
-\]
-
+$$
 但：
-
-\[
+$$
 JUDGE=NO
-\]
-
+$$
 这再次说明：
 
 > `"Sure"` logprob 只是 surrogate，而不是最终攻击目标。
@@ -1127,20 +1073,15 @@ suffix s
 > **初始状态下 target token logprob 较大的 request 更容易攻击。**
 
 假设两个 request：
-
-\[
+$$
 R_A,R_B
-\]
-
+$$
 固定：
-
-\[
+$$
 T,s_0
-\]
-
+$$
 如果：
-
-\[
+$$
 \log P
 (
 \text{"Sure"}
@@ -1154,8 +1095,7 @@ T,R_A,s_0
 |
 T,R_B,s_0
 )
-\]
-
+$$
 那么 \(R_A\) 就被认为比 \(R_B\) 更容易。
 
 ---
@@ -1163,49 +1103,35 @@ T,R_B,s_0
 ## Self-Transfer 的具体流程
 
 首先在：
-
-\[
+$$
 R_{\text{easy}}
-\]
-
+$$
 上优化：
-
-\[
+$$
 T+R_{\text{easy}}+s_0
-\]
-
+$$
 经过 Random Search 得到：
-
-\[
+$$
 s_{\text{easy}}^*
-\]
-
+$$
 然后处理：
-
-\[
+$$
 R_{\text{hard}}
-\]
-
+$$
 普通 Random Search 原本是：
-
-\[
+$$
 T+R_{\text{hard}}+s_0
-\]
-
+$$
 而 self-transfer 改成：
-
-\[
+$$
 T+R_{\text{hard}}+s_{\text{easy}}^*
-\]
-
+$$
 然后继续优化：
-
-\[
+$$
 s_{\text{easy}}^*
 \rightarrow
 s_{\text{hard}}^*
-\]
-
+$$
 所以它可以写成：
 
 ```text
@@ -1235,43 +1161,33 @@ suffix_B
 ### 直接迁移
 
 某个 request 上优化的 suffix：
-
-\[
+$$
 s_A^*
-\]
-
+$$
 拿到另一个 request：
-
-\[
+$$
 R_B
-\]
-
+$$
 上可能直接有效。
 
 ### 初始化迁移
 
 即使：
-
-\[
+$$
 s_A^*
-\]
-
+$$
 不能直接攻击 \(R_B\)，它仍然可能比原始初始化：
-
-\[
+$$
 s_0
-\]
-
+$$
 更接近好的搜索区域。
 
 所以：
-
-\[
+$$
 s_A^*
 \rightarrow
 \text{initialization for optimizing }R_B
-\]
-
+$$
 往往能够显著减少查询次数。
 
 Figure 2 显示 self-transfer：
@@ -1303,11 +1219,9 @@ Request C ─┘
 于是不同 request 的 optimization landscape 可能包含某些共享结构。
 
 所以：
-
-\[
+$$
 s_A^*
-\]
-
+$$
 在 \(R_A\) 上找到的有利区域，也可能在 \(R_B\) 上仍然比较有利。
 
 但必须注意：
@@ -1319,11 +1233,9 @@ s_A^*
 > **model-specific + request-specific**
 
 所以论文没有发现一个：
-
-\[
+$$
 s_{\text{universal}}
-\]
-
+$$
 能够对所有 request 通用。
 
 Self-transfer 更准确理解为：
@@ -1351,17 +1263,13 @@ Request B
 ```
 
 即：
-
-\[
+$$
 M \text{ fixed}
-\]
-
+$$
 变化的是：
-
-\[
+$$
 R_A\rightarrow R_B
-\]
-
+$$
 ---
 
 ### Transfer Attack
@@ -1375,11 +1283,9 @@ Model B
 ```
 
 变化的是：
-
-\[
+$$
 M_A\rightarrow M_B
-\]
-
+$$
 作者发现，一些在 GPT-4 上找到的攻击可以直接迁移到 Claude。
 
 这点特别重要，因为：
@@ -1609,11 +1515,9 @@ Defense：
 # 2.15 GPT-4o：为什么还要重新设计 Prompt？
 
 原始 prompt 在 GPT-4o 上：
-
-\[
+$$
 ASR=0\%
-\]
-
+$$
 而且直接在其上运行 Random Search 也没有很好解决问题。
 
 于是作者利用 logprob feedback：
@@ -1637,17 +1541,13 @@ ASR=0\%
 | Custom Prompt + RS + Self-transfer | **100%** |
 
 这说明攻击效果不仅取决于：
-
-\[
+$$
 \text{optimizer}
-\]
-
+$$
 还强烈取决于：
-
-\[
+$$
 \text{optimization parameterization}
-\]
-
+$$
 也就是：
 
 > **你到底让 optimizer 在什么 prompt structure 上工作。**
@@ -1661,11 +1561,9 @@ ASR=0\%
 Claude 不提供论文 Random Search 所需要的 target-token logprob。
 
 于是：
-
-\[
+$$
 \log P(t|x,s)
-\]
-
+$$
 不可观察。
 
 那么算法无法判断：
@@ -1851,11 +1749,9 @@ Random Search 每一次 iteration 最昂贵的操作就是：
 > poison training 中 trigger token 会反复出现，因此其 embedding 可能比正常 token 发生更异常的变化。
 
 于是先比较多个模型的 embedding：
-
-\[
+$$
 \|v_i^{(r)}-v_i^{(s)}\|_2
-\]
-
+$$
 找出变化异常大的 token，形成 candidate pool。
 
 然后：
@@ -1982,19 +1878,15 @@ search space 太大
 ## 贡献一：证明非常简单的 Logprob-guided Search 已经足够危险
 
 作者说明：
-
-\[
+$$
 \text{gradient access}
-\]
-
+$$
 不是高成功率 suffix attack 的必要条件。
 
 只要能够获得：
-
-\[
+$$
 \text{target-token logprob}
-\]
-
+$$
 一个非常简单的 Random Search 就可能工作。
 
 ---
@@ -2002,15 +1894,13 @@ search space 太大
 ## 贡献二：提出并系统使用 Self-Transfer
 
 在同一模型内部：
-
-\[
+$$
 R_A
 \rightarrow
 s_A^*
 \rightarrow
 R_B
-\]
-
+$$
 利用 suffix 的跨 request 可迁移性改善 initialization。
 
 核心并不是 universal suffix，而是：
@@ -2083,17 +1973,13 @@ system prompt controls
 ## 8.1 `"Sure"` Logprob 只是 Proxy
 
 最明显问题：
-
-\[
+$$
 P(\text{"Sure"})↑
-\]
-
+$$
 不等于：
-
-\[
+$$
 ASR↑
-\]
-
+$$
 特别是在 suffix 很长时可能出现：
 
 ```text
@@ -2142,11 +2028,9 @@ Judge = failure
 > Claude 2.1 存在相当明显的 false positive。
 
 因此：
-
-\[
+$$
 100\%\ Judge\ ASR
-\]
-
+$$
 不应直接等同于：
 
 > 100% 的回答都真正具有完全一致的人类意义上的危害性。
@@ -2217,18 +2101,14 @@ Self-transfer 缓解，但没有消除这个问题。
 ## 洞见一：Attack Objective 和 True Objective 可以分离
 
 真正目标：
-
-\[
+$$
 JUDGE(LLM(P),R)=YES
-\]
-
+$$
 搜索目标：
-
-\[
+$$
 \max_s
 \log P(\text{"Sure"}|T,R,s)
-\]
-
+$$
 这是一种非常经典的 security / optimization 思想：
 
 ```text
@@ -2278,17 +2158,13 @@ in-context structure + suffix
 ## 洞见三：同一模型不同 Request 的优化景观并非完全独立
 
 Self-transfer 表明：
-
-\[
+$$
 s_A^*
-\]
-
+$$
 包含了一些能够被：
-
-\[
+$$
 R_B
-\]
-
+$$
 复用的信息。
 
 虽然论文没有定位这种共享结构到底存在于模型 representation 的哪个方向，但实验已经说明：
@@ -2498,17 +2374,13 @@ API feature 本身产生新的攻击面
 # 12. 读完后值得继续追的问题
 
 这篇论文已经证明：
-
-\[
+$$
 \text{suffix transferability exists}
-\]
-
+$$
 但没有真正解释：
-
-\[
+$$
 \text{why}
-\]
-
+$$
 因此比继续做“Random Search + 一个新 heuristic”更值得深入的问题可能是：
 
 ```text

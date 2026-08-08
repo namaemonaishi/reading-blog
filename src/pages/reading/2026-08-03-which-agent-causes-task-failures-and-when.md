@@ -164,11 +164,9 @@ Process Reward Model或过程验证Benchmark通常关注单个模型的一条推
 ## 2.1 多智能体轨迹表示
 
 作者考虑一个轮流行动的多智能体系统：
-
-\[
+$$
 M=\langle \mathcal{N},S,A,P,\phi\rangle
-\]
-
+$$
 其中：
 
 - \(\mathcal{N}\)：智能体集合；
@@ -178,31 +176,25 @@ M=\langle \mathcal{N},S,A,P,\phi\rangle
 - \(\phi(t)\)：时间步 \(t\) 当前执行动作的智能体。
 
 完整轨迹表示为：
-
-\[
+$$
 \tau=(s_0,a_0,s_1,a_1,\ldots,s_T)
-\]
-
+$$
 任务结果定义为：
-
-\[
+$$
 Z(\tau)=
 \begin{cases}
 1,& \text{系统失败}\\
 0,& \text{系统成功}
 \end{cases}
-\]
-
+$$
 ------
 
 ## 2.2 决定性错误
 
 假设智能体 \(i\) 在步骤 \(t\) 执行了错误动作。作者设想进行一次反事实干预：
-
-\[
+$$
 \tau^{(i,t)}=I_{(i,t)}(\tau)
-\]
-
+$$
 即：
 
 1. 保持步骤 \(t\) 之前不变；
@@ -210,30 +202,24 @@ Z(\tau)=
 3. 相应调整后续轨迹。
 
 如果原轨迹失败，而修复后成功：
-
-\[
+$$
 Z(\tau)=1,\qquad Z(\tau^{(i,t)})=0
-\]
-
+$$
 则把 \((i,t)\) 定义为一个决定性错误。
 
 如果一条轨迹存在多个决定性错误，作者选择**时间最早的一个**：
-
-\[
+$$
 (i^*,t^*)=\arg\min_{(i,t)\in C(\tau)}t
-\]
-
+$$
 其中：
 
 - \(i^*\)：失败责任智能体；
 - \(t^*\)：决定性错误步骤。
 
 因此，论文的预测目标是：
-
-\[
+$$
 \text{Query + Failure Log}\rightarrow(i^*,t^*)
-\]
-
+$$
 ------
 
 ## 追问一：把目标写成 \((i^*,t^*)\) 真能算核心贡献吗？
@@ -309,11 +295,9 @@ Step 20：输出错误答案
 对于CaptainAgent、Magnetic-One这类系统，把日志抽象成按步骤排列的单一消息序列是合理的。
 
 而且在该设定下，每一步只有一个行动者：
-
-\[
+$$
 t\rightarrow\phi(t)
-\]
-
+$$
 因此只要定位出错误步骤，就能直接知道对应智能体。
 
 ------
@@ -508,11 +492,9 @@ Reason for Mistake
 但它必须从长日志中直接检索精确步骤，因此容易发生长上下文定位失败。
 
 ### 成本
-
-\[
+$$
 Cost_{\text{all}}=C+nT_l
-\]
-
+$$
 只调用一次，通常成本最低。
 
 ------
@@ -522,11 +504,9 @@ Cost_{\text{all}}=C+nT_l
 从第一步开始逐步检查。
 
 第 \(i\) 次调用时输入：
-
-\[
+$$
 Q+\{l_1,\ldots,l_i\}
-\]
-
+$$
 并询问：
 
 > 当前最新一步是否包含会阻碍任务完成的错误？
@@ -544,14 +524,12 @@ Q+\{l_1,\ldots,l_i\}
 - 同一前缀被反复输入，Token成本高。
 
 ### 成本
-
-\[
+$$
 Cost_{\text{step}}
 =
 i^*C+
 T_l\frac{i^*(i^*+1)}{2}
-\]
-
+$$
 最坏情况下近似随日志长度平方增长。
 
 ------
@@ -572,11 +550,9 @@ T_l\frac{i^*(i^*+1)}{2}
 ### 优点
 
 调用次数约为：
-
-\[
+$$
 \lceil\log_2 n\rceil
-\]
-
+$$
 比逐步扫描少。
 
 ### 缺点
@@ -734,11 +710,9 @@ Ground Truth相当于推理时的外部参照，而不是训练标签。它能�
 ### 该对比的局限
 
 Without Ground Truth混合了两个任务：
-
-\[
+$$
 \text{原任务求解}+\text{失败归因}
-\]
-
+$$
 所以Without Ground Truth表现差时，不能确定究竟是：
 
 - 模型不会解题；
@@ -753,33 +727,27 @@ Without Ground Truth混合了两个任务：
 ## 6.3 评价指标
 
 ### Agent-Level Accuracy
-
-\[
+$$
 \text{AgentAcc}
 =
 \frac{1}{N}\sum_{j=1}^{N}
 \mathbf{1}[\hat A_j=A_j^*]
-\]
-
+$$
 预测责任Agent与人工标签完全一致的比例。
 
 ### Step-Level Accuracy
-
-\[
+$$
 \text{StepAcc}
 =
 \frac{1}{N}\sum_{j=1}^{N}
 \mathbf{1}[\hat s_j=s_j^*]
-\]
-
+$$
 步骤编号必须完全一致。
 
 ### Step-Level Accuracy with Tolerance
-
-\[
+$$
 |\hat s_j-s_j^*|\leq k
-\]
-
+$$
 若预测步骤落在真实步骤附近的容忍范围内，则视为正确。
 
 ------
@@ -789,11 +757,9 @@ Without Ground Truth混合了两个任务：
 ## 7.1 责任智能体识别依赖全局上下文
 
 Agent-Level Accuracy整体排序为：
-
-\[
+$$
 \text{All-at-Once}>\text{Binary Search}>\text{Step-by-Step}
-\]
-
+$$
 | 场景 | All-at-Once | Binary Search | Step-by-Step |
 |---|---:|---:|---:|
 | 算法生成，有答案 | **54.33%** | 44.13% | 35.20% |
@@ -808,11 +774,9 @@ Agent-Level Accuracy整体排序为：
 ## 7.2 精确步骤定位更适合局部检查
 
 Step-Level Accuracy整体趋势为：
-
-\[
+$$
 \text{Step-by-Step}>\text{Binary Search}>\text{All-at-Once}
-\]
-
+$$
 | 场景 | Step-by-Step | Binary Search | All-at-Once |
 |---|---:|---:|---:|
 | 算法生成，有答案 | **25.51%** | 23.98% | 12.50% |
@@ -1176,8 +1140,7 @@ MAST：
 ```
 
 更完整的归因目标应是：
-
-\[
+$$
 \text{Failure}
 \rightarrow
 \text{Agent}
@@ -1189,8 +1152,7 @@ MAST：
 \text{Mechanism}
 \rightarrow
 \text{Propagation}
-\]
-
+$$
 ------
 
 # 11. 复现与实现建议
@@ -1287,14 +1249,12 @@ Agent推理
 ```
 
 可定义：
-
-\[
+$$
 ACE(i,t)=
 P(\text{success}\mid do(\text{fix }i,t))
 -
 P(\text{success}\mid \text{original})
-\]
-
+$$
 这样才能更接近因果意义上的根因。
 
 ### 扩展到攻击归因
