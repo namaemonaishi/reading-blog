@@ -112,7 +112,8 @@ function parseGitPath(value) {
 function statusPath(line) {
   if (!line.trim()) return null;
 
-  const rawPath = line.slice(3).trim();
+  const match = line.match(/^\s*(?:[ MADRCU?!]{1,2})\s+(.+)$/);
+  const rawPath = (match?.[1] ?? line).trim();
   const targetPath = rawPath.includes(" -> ") ? rawPath.split(" -> ").pop() : rawPath;
   return normalizeRel(parseGitPath(targetPath));
 }
