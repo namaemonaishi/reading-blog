@@ -540,17 +540,17 @@ LLM 是 autoregressive model。
 
 生成：
 
-\[
-y_1,y_2,\ldots,y_n
-\]
+$$
+y_1, y_2, \ldots, y_n
+$$
 
 时：
 
-\[
-P(y_1,\ldots,y_n|x)
+$$
+P(y_1, \ldots, y_n \mid x)
 =
-\prod_i P(y_i|x,y_{<i})
-\]
+\prod_i P(y_i \mid x, y_{<i})
+$$
 
 第一个 token 一旦生成，就成为后续生成的 conditioning context。
 
